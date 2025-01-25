@@ -95,4 +95,16 @@ public class MovieController {
         String response = movieService.deleteAllMovies();
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/search")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<MovieDto>> searchMoviesHandler(@RequestParam String title) {
+        return ResponseEntity.ok(movieService.searchMoviesByTitle(title));
+    }
+
+    @GetMapping("/external")
+    public ResponseEntity<MovieDto> getExternalMovieDetails(@RequestParam String imdbId) {
+        MovieDto movieDto = movieService.getMovieDetailsFromApi(imdbId);
+        return ResponseEntity.ok(movieDto);
+    }
 }

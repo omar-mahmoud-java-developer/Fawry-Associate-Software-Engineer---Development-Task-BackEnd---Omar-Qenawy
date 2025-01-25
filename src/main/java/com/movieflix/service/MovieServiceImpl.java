@@ -6,13 +6,16 @@ import com.movieflix.entities.Movie;
 import com.movieflix.exceptions.FileExistsException;
 import com.movieflix.exceptions.MovieNotFoundException;
 import com.movieflix.repositories.MovieRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,9 +28,15 @@ import java.util.List;
 public class MovieServiceImpl implements MovieService {
 
     private final MovieRepository movieRepository;
+    @Autowired
+    private  RestTemplate restTemplate;
 
     private final FileService fileService;
+    @Value("${omdb.api.key}")
+    private String apiKey;
 
+    @Value("${omdb.api.url}")
+    private String apiUrl;
 
     @Value("${project.poster}")
     private String path;
@@ -274,9 +283,6 @@ public class MovieServiceImpl implements MovieService {
     public String deleteAllMovies() throws IOException {
         List<Movie> movies = movieRepository.findAll();
 
-
-
-
         movieRepository.deleteAll();
 
         return "All movies deleted successfully!";
@@ -303,6 +309,38 @@ public class MovieServiceImpl implements MovieService {
         );
 
         return response;
+    }
+
+
+    @Override
+    public List<MovieDto> searchMoviesByTitle(String title) {
+        List<Movie> movies = movieRepository.findByTitleContainingIgnoreCase(title);
+        List<MovieDto> movieDtos = new ArrayList<>();
+        for(Movie movie : movies) {
+            String posterUrl = baseUrl + "/file/" + movie.getPoster();
+            MovieDto movieDto = new MovieDto(
+                    movie.getMovieId(),
+                    movie.getTitle(),
+                    movie.getDirector(),
+                    movie.getStudio(),
+                    movie.getMovieCast(),
+                    movie.getReleaseYear(),
+                    movie.getPoster(),
+                    posterUrl
+            );
+            movieDtos.add(movieDto);
+        }
+        return movieDtos;
+    }
+
+    @Override
+    public MovieDto getMovieDetailsFromApi(String imdbId) {
+        String url = UriComponentsBuilder.fromHttpUrl(apiUrl)
+                .queryParam("i", imdbId)
+                .queryParam("apikey", apiKey)
+                .toUriString();
+
+        return restTemplate.getForObject(url, MovieDto.class);
     }
 
 }

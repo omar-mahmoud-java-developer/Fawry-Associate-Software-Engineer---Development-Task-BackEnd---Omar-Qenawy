@@ -24,6 +24,8 @@ public interface MovieService {
     MoviePageResponse getAllMoviesWithPaginationAndSorting(Integer pageNumber, Integer pageSize,
                                                            String sortBy, String dir);
     String deleteAllMovies() throws IOException;
-
+    MovieDto  getMovieDetailsFromApi( String imdbId);
     MovieDto getMovieDetails (Integer movieId);
+    List<MovieDto> searchMoviesByTitle(String title);
+
 }
